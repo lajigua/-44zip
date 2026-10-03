@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>KFB 资源包工具</title>
+<style>
+:root {
+  --bg: #0f1420; --card: #1a2233; --card2: #212c42; --line: #2c3a55;
+  --fg: #e8edf7; --dim: #93a1bd; --accent: #4f8cff; --ok: #3ecf8e; --err: #ff6b6b;
+  --radius: 14px;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: -apple-system, "PingFang SC", "HarmonyOS Sans", "Microsoft YaHei", sans-serif;
+  font-size: 15px; line-height: 1.55; padding-bottom: 40px;
+}
+header { padding: 18px 16px 10px; }
+header h1 { margin: 0; font-size: 20px; letter-spacing: .5px; }
+header p { margin: 4px 0 0; color: var(--dim); font-size: 12.5px; }
+.tabs { display: flex; gap: 8px; padding: 10px 16px 0; position: sticky; top: 0; background: var(--bg); z-index: 5; }
+.tab {
+  flex: 1; text-align: center; padding: 10px 0; border-radius: 10px;
+  background: var(--card); color: var(--dim); font-size: 14.5px; font-weight: 600;
+}
+.tab.on { background: var(--accent); color: #fff; }
+.page { display: none; padding: 14px 16px; }
+.page.on { display: block; }
+.card {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 14px; margin-bottom: 14px;
+}
+.card h3 { margin: 0 0 10px; font-size: 15px; }
+label { display: block; color: var(--dim); font-size: 13px; margin: 12px 0 5px; }
+label:first-of-type { margin-top: 0; }
+input[type=text] {
+  width: 100%; padding: 11px 12px; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--card2); color: var(--fg); font-size: 14px; outline: none;
+}
+input[type=text]:focus { border-color: var(--accent); }
+.file-box {
+  display: flex; align-items: center; gap: 10px; padding: 12px;
+  background: var(--card2); border: 1px dashed var(--line); border-radius: 10px; cursor: pointer;
+}
+.file-box input[type=file] { display: none; }
+.file-box .icon { font-size: 22px; }
+.file-box .name { flex: 1; font-size: 13.5px; word-break: break-all; color: var(--fg); }
+.file-box .name.empty { color: var(--dim); }
+button.main {
+  width: 100%; padding: 13px; margin-top: 14px; border: none; border-radius: 10px;
+  background: var(--accent); color: #fff; font-size: 16px; font-weight: 700;
+}
+button.main:active { opacity: .85; }
+button.main:disabled { background: #3a4660; color: #7a86a3; }
+.btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.btn {
+  padding: 9px 14px; border-radius: 9px; border: 1px solid var(--line);
+  background: var(--card2); color: var(--fg); font-size: 13.5px; font-weight: 600;
+}
+.btn:active { background: var(--accent); color: #fff; }
+table.info { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.info td { padding: 5px 0; vertical-align: top; word-break: break-all; }
+table.info td:first-child { color: var(--dim); white-space: nowrap; width: 105px; padding-right: 10px; }
+.msg { border-radius: 10px; padding: 11px 12px; font-size: 13.5px; margin-top: 12px; display: none; }
+.msg.err { background: rgba(255,107,107,.12); color: var(--err); border: 1px solid rgba(255,107,107,.3); display: block; }
+.msg.ok { background: rgba(62,207,142,.1); color: var(--ok); border: 1px solid rgba(62,207,142,.3); display: block; }
+pre.preview {
+  background: #0b101c; border: 1px solid var(--line); border-radius: 10px; padding: 10px;
+  font-size: 11px; line-height: 1.5; overflow: auto; max-height: 340px; white-space: pre-wrap; word-break: break-all;
+  color: #b7c4dd; margin: 8px 0 0;
+}
+details summary { cursor: pointer; color: var(--dim); font-size: 13.5px; padding: 6px 0; }
+.help p, .help li { font-size: 13.5px; color: var(--fg); }
+.help .dim { color: var(--dim); }
+.help code { background: var(--card2); padding: 1px 6px; border-radius: 5px; font-size: 12.5px; color: #9fc3ff; }
+.spin {
+  width: 18px; height: 18px; border: 3px solid rgba(255,255,255,.25); border-top-color: #fff;
+  border-radius: 50%; animation: r 0.8s linear infinite; display: inline-block; vertical-align: -4px; margin-right: 8px;
+}
+@keyframes r { to { transform: rotate(360deg); } }
+.tag { display: inline-block; font-size: 11px; padding: 1px 8px; border-radius: 20px; background: var(--card2); color: var(--dim); margin-left: 6px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>KFB 资源包工具 <span class="tag" id="verTag"></span></h1>
+  <p>assetbundle 静态解密 / 查看 / 回打包（内置新版 schema，AES-256-CTR + LZ4 + CRC 修复）</p>
+</header>
+
+<div class="tabs">
+  <div class="tab on" data-page="decrypt">解密浏览</div>
+  <div class="tab" data-page="encode">回打包</div>
+  <div class="tab" data-page="help">帮助</div>
+</div>
+
+<!-- 解密页 -->
+<div class="page on" id="page-decrypt">
+  <div class="card">
+    <h3>① 选择 assetbundle</h3>
+    <label class="file-box" id="pickBundle">
+      <input type="file" id="fileBundle" accept=".assetbundle,*/*">
+      <span class="icon">📦</span>
+      <span class="name empty" id="bundleName">点击选择 .assetbundle 文件</span>
+    </label>
+    <label for="keyDecrypt">AES-256 密钥（64 位十六进制）</label>
+    <input type="text" id="keyDecrypt" placeholder="例如 8057d45566cc...（共 64 位，可含空格）" autocomplete="off">
+    <button class="main" id="btnDecrypt">解密并解析</button>
+    <div class="msg" id="msgDecrypt"></div>
+  </div>
+  <div class="card" id="resultDecrypt" style="display:none">
+    <h3>② 解密结果</h3>
+    <table class="info" id="infoTable"></table>
+    <div class="btn-row">
+      <button class="btn" data-dl="kfb">明文 KFB</button>
+      <button class="btn" data-dl="json">可编辑 JSON</button>
+      <button class="btn" data-dl="semantic">语义 JSON</button>
+      <button class="btn" data-dl="xml">XML</button>
+    </div>
+    <details>
+      <summary>预览可编辑 JSON（前 4000 字符）</summary>
+      <pre class="preview" id="jsonPreview"></pre>
+    </details>
+  </div>
+</div>
+
+<!-- 回打包页 -->
+<div class="page" id="page-encode">
+  <div class="card">
+    <h3>① 选择文件</h3>
+    <label>原始 assetbundle（作为容器模板）</label>
+    <label class="file-box" id="pickBundle2">
+      <input type="file" id="fileBundle2" accept=".assetbundle,*/*">
+      <span class="icon">📦</span>
+      <span class="name empty" id="bundle2Name">点击选择原版 .assetbundle</span>
+    </label>
+    <label>编辑后的 JSON / XML（可编辑 JSON、语义 JSON 或旧版 XML 均可）</label>
+    <label class="file-box" id="pickJson">
+      <input type="file" id="fileJson" accept=".json,.xml,*/*">
+      <span class="icon">📝</span>
+      <span class="name empty" id="jsonName">点击选择编辑后的文件</span>
+    </label>
+    <label for="keyEncode">AES-256 密钥（与解密时相同）</label>
+    <input type="text" id="keyEncode" placeholder="64 位十六进制" autocomplete="off">
+    <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:#e8c46b;cursor:pointer">
+      <input type="checkbox" id="optMatchSize" style="width:auto">
+      <span>对齐原文件大小（LZ4HC/LZMA 重压缩 + 补零，绕过文件大小校验）</span>
+    </label>
+    <button class="main" id="btnEncode">回打包 assetbundle</button>
+    <div class="msg" id="msgEncode"></div>
+  </div>
+  <div class="card" id="resultEncode" style="display:none">
+    <h3>② 打包结果</h3>
+    <table class="info" id="encodeTable"></table>
+    <div class="btn-row">
+      <button class="btn" id="dlBundle">下载 assetbundle</button>
+    </div>
+  </div>
+</div>
+
+<!-- 帮助页 -->
+<div class="page help" id="page-help">
+  <div class="card">
+    <h3>使用流程</h3>
+    <p class="dim">完整链路：解密 → 编辑 JSON → 回打包（自动完成 LZ4 / AES / UnityFS 重建 / CRC 修复 / 重开校验）。</p>
+    <ol>
+      <li><b>解密浏览</b>页：选 assetbundle + 输入密钥 → 点「解密并解析」。</li>
+      <li>下载「可编辑 JSON」（推荐）或「XML」，用任意编辑器修改字段。</li>
+      <li><b>回打包</b>页：选原始 bundle + 编辑后的 JSON + 同一密钥 → 点「回打包」。</li>
+      <li>下载新的 assetbundle 放回游戏目录。</li>
+    </ol>
+  </div>
+  <div class="card">
+    <h3>格式说明</h3>
+    <ul>
+      <li>可编辑 JSON：字段键形如 <code>"Int32 scriptType"</code>，继承同名带类名前缀。</li>
+      <li>语义 JSON：semantic 格式，多态对象请保留 <code>$type</code> 标记。</li>
+      <li>XML：旧版 AnimationData 可读格式。</li>
+      <li>三种格式回打包时自动识别，无需选择。</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>注意事项</h3>
+    <ul>
+      <li>回打包后文件比原版大属正常（未压缩 LZ4 存储），游戏可正常加载。</li>
+      <li>CRC32 会自动修复为原包值；完成后自动重新解密校验字节与语义一致性。</li>
+      <li>解密报「无法跳过的未知字段」说明游戏又更新了 schema，需更新内置 kfb_schema.json。</li>
+      <li>所有处理均在手机本地完成，不上传任何数据。</li>
+    </ul>
+  </div>
+</div>
+
+<script src="kfb_core.bundle.js"></script>
+<script src="app_ui.js"></script>
+</body>
+</html>
